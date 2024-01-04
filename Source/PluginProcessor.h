@@ -55,13 +55,15 @@ public:
     //==============================================================================
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
-    
+    std::atomic <float>* algorithmParam = nullptr;
+
     float speed;
 
 
 
 private:
-    
+    juce::AudioProcessorValueTreeState parameters;
+
        int currentNote, lastNoteValue;
        int time;
        float rate;

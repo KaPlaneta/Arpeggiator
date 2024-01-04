@@ -11,7 +11,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-
 //==============================================================================
 ArpAudioProcessor::ArpAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -22,9 +21,18 @@ ArpAudioProcessor::ArpAudioProcessor()
                       #endif
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
-                       )
+                       ),
+parameters(*this, nullptr, juce::Identifier("ImageSonification"),
+    {
+        std::make_unique<juce::AudioParameterInt>("algorithm",            // parameterID
+                                                     "Algorithm",            // parameter name
+                                                     0,              // minimum value
+                                                     100,              // maximum value
+                                                     0)        // default value
+    })
 #endif
 {
+    algorithmParam = parameters.getRawParameterValue("algorithm");
 
 }
 
@@ -168,6 +176,8 @@ void ArpAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
     
     if ((time + numSamples) >= noteDuration)
             {
+                
+                
                 auto offset = fmax (0, fmin ((int) (noteDuration - time), numSamples - 1));
 
                 if (lastNoteValue > 0)
@@ -178,11 +188,30 @@ void ArpAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
 
                 if (notes.size() > 0)
                 {
-                    currentNote = (currentNote + 1) % notes.size();
+                    if (*algorithmParam == static_cast<float>(DownToUp)) {
+                        
+                        currentNote = (currentNote + 1) % notes.size();
+                        
+                    }
+                    else if (*algorithmParam == static_cast<float>(UpToDown)) {
+                        if(currentNote == 0){
+                            
+                            currentNote = notes.size() -1;
+                            
+                        }
+                            else{
+                                currentNote = currentNote - 1;
+                            }
+                        }
+                    else if (*algorithmParam == static_cast<float>(Random)) {
+                        
+                        auto randomInt = juce::Random::getSystemRandom().nextInt(notes.size());
+                        currentNote = randomInt;
+                        
+                    }
                     lastNoteValue = notes[currentNote];
                     midiMessages.addEvent (juce::MidiMessage::noteOn (1, lastNoteValue, (juce::uint8) 127), offset);
                 }
-
             }
 
             time = (time + numSamples) % noteDuration;
@@ -204,6 +233,9 @@ juce::AudioProcessorEditor* ArpAudioProcessor::createEditor()
 void ArpAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     
+    auto state = parameters.copyState();
+    std::unique_ptr<juce::XmlElement> xml(state.createXml());
+    copyXmlToBinary(*xml, destData);
 
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
@@ -212,7 +244,11 @@ void ArpAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 
 void ArpAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    
+    std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
+
+    if (xmlState.get() != nullptr)
+        if (xmlState->hasTagName(parameters.state.getType()))
+            parameters.replaceState(juce::ValueTree::fromXml(*xmlState));
 
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
