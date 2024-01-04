@@ -55,10 +55,13 @@ public:
     //==============================================================================
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
+    
+    float speed;
+
+
 
 private:
     
-       juce::AudioParameterFloat* speed;
        int currentNote, lastNoteValue;
        int time;
        float rate;

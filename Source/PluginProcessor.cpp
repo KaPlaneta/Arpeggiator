@@ -25,7 +25,6 @@ ArpAudioProcessor::ArpAudioProcessor()
                        )
 #endif
 {
-    addParameter (speed = new juce::AudioParameterFloat ({ "speed", 1 }, "Arpeggiator Speed", 0.0, 1.0, 0.5));
 
 }
 
@@ -146,7 +145,6 @@ bool ArpAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) cons
 #endif
 
 
- 
 void ArpAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     
@@ -157,16 +155,16 @@ void ArpAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
             auto numSamples = buffer.getNumSamples();
 
             // get note duration
-            auto noteDuration = static_cast<int> (std::ceil (rate * 0.25f * (0.1f + (1.0f - (*speed)))));
+            auto noteDuration = static_cast<int> (std::ceil (rate * 0.25f * (0.1f + (1.0f - (speed)))));
 
-            for (const auto metadata : midiMessages)
+            for (const auto metadata : midiMessages) //nutki
             {
-                const auto msg = metadata.getMessage();
-                if      (msg.isNoteOn())  notes.add (msg.getNoteNumber());
-                else if (msg.isNoteOff()) notes.removeValue (msg.getNoteNumber());
+                const auto msg = metadata.getMessage(); //siedzi tu pojedyncza nutka
+                if      (msg.isNoteOn())  notes.add (msg.getNoteNumber()); //zapisuje wysokosc dzwieku ktora nuta. Notes tablica ktora trzyma nuty i dodaje add
+                else if (msg.isNoteOff()) notes.removeValue (msg.getNoteNumber()); //odkliknieta no to usuwam
             }
 
-        midiMessages.clear();
+        midiMessages.clear(); //czyszczony bufor
     
     if ((time + numSamples) >= noteDuration)
             {
@@ -182,7 +180,7 @@ void ArpAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
                 {
                     currentNote = (currentNote + 1) % notes.size();
                     lastNoteValue = notes[currentNote];
-                    midiMessages.addEvent (juce::MidiMessage::noteOn (1, lastNoteValue, (float) 127), offset);
+                    midiMessages.addEvent (juce::MidiMessage::noteOn (1, lastNoteValue, (juce::uint8) 127), offset);
                 }
 
             }
@@ -206,7 +204,6 @@ juce::AudioProcessorEditor* ArpAudioProcessor::createEditor()
 void ArpAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     
-    juce::MemoryOutputStream (destData, true).writeFloat (*speed);
 
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
@@ -216,7 +213,6 @@ void ArpAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 void ArpAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     
-    speed->setValueNotifyingHost (juce::MemoryInputStream (data, static_cast<size_t> (sizeInBytes), false).readFloat());
 
     // You should use this method to restore your parameters from this memory block,
     // whose contents will have been created by the getStateInformation() call.
