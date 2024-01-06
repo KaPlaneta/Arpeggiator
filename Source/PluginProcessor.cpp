@@ -32,6 +32,8 @@ parameters(*this, nullptr, juce::Identifier("ImageSonification"),
     })
 #endif
 {
+    currentOctave = 1;
+    counterNotes = 0;
     algorithmParam = parameters.getRawParameterValue("algorithm");
 
 }
@@ -174,61 +176,79 @@ void ArpAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
 
         midiMessages.clear(); //czyszczony bufor
     
+    if (notesSize != notes.size()) {
+        notesSize = notes.size();
+        currentOctave = 1;
+        counterNotes = 0;
+        if (*algorithmParam == static_cast<float>(DownToUp)) {
+            currentNote = -1;
+        }
+        else if (*algorithmParam == static_cast<float>(UpToDown)) {
+            currentNote = notesSize;
+        }
+    }
+    
     if ((time + numSamples) >= noteDuration)
             {
                 auto offset = fmax (0, fmin ((int) (noteDuration - time), numSamples - 1));
 
                 if (lastNoteValue > 0)
                 {
-                    midiMessages.addEvent (juce::MidiMessage::noteOff (1, lastNoteValue), offset);
+                    midiMessages.addEvent (juce::MidiMessage::noteOff (1, newNotes), offset);
                     lastNoteValue = -1;
                 }
 
-                if (notes.size() > 0)
+                if (notesSize > 0)
                 {
                     if (*algorithmParam == static_cast<float>(DownToUp)) {
                         
-                        currentNote = (currentNote + 1) % notes.size();
+                        currentNote = (currentNote + 1) % notesSize;
                         
                     }
                     else if (*algorithmParam == static_cast<float>(UpToDown)) {
                         if(currentNote == 0){
                             
-                            currentNote = notes.size() -1;
-                            
+                            currentNote = notesSize -1;
+
+                        } else{
+                            currentNote = currentNote - 1;
                         }
-                            else{
-                                currentNote = currentNote - 1;
-                            }
-                        }
+                    }
                     else if (*algorithmParam == static_cast<float>(Random)) {
                         
-                        auto randomInt = juce::Random::getSystemRandom().nextInt(notes.size());
+                        auto randomInt = juce::Random::getSystemRandom().nextInt(notesSize);
                         currentNote = randomInt;
                         
                     }
                     lastNoteValue = notes[currentNote];
-                    newNotes = lastNoteValue+(currentOctave-1)*semitonesInOctave;
-                    midiMessages.addEvent (juce::MidiMessage::noteOn (1, lastNoteValue, (juce::uint8) 127), offset);
-                }
-                
-                counterNotes += 1;
-                
-                if(counterNotes == notes.size()){
+                    newNotes = lastNoteValue + ((currentOctave-1)*semitonesInOctave);
                     
-                    currentOctave += 1;
-                    counterNotes = 0;
+                    midiMessages.addEvent (juce::MidiMessage::noteOn (1, newNotes, (juce::uint8) 127), offset);
                     
-//                    if(currentOctave == octaves ){
-//                        currentOctave = 1;
-//                    }
-                    
+                    counterNotes += 1;
+
+                    if(counterNotes >= notesSize){
+                        counterNotes = 0;
+                        currentOctave = currentOctave + 1;
+
+                        if(currentOctave >= octaves+1){
+                            
+                            
+                            currentOctave = 1;
+                            
+                        }
+                        if (*algorithmParam == static_cast<float>(DownToUp)) {
+                            currentNote = -1;
+                        }
+                        else if (*algorithmParam == static_cast<float>(UpToDown)) {
+                            currentNote = notesSize;
+                        }
+                        
+                    }
                 }
             }
 
-            time = (time + numSamples) % noteDuration;
-
-        
+            time = (time + numSamples) % noteDuration;  
 }
 
 //==============================================================================

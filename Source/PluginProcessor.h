@@ -66,11 +66,12 @@ private:
     juce::AudioProcessorValueTreeState parameters;
 
        int currentNote, lastNoteValue;
+       int notesSize;
        int time;
        float rate;
-       int currentOctave = 1;
+       int currentOctave;
        int semitonesInOctave = 12;
-       int counterNotes = 0;
+       int counterNotes;
        int newNotes;
        
     
