@@ -168,7 +168,7 @@ void ArpAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
             for (const auto metadata : midiMessages) //nutki
             {
                 const auto msg = metadata.getMessage(); //siedzi tu pojedyncza nutka
-                if      (msg.isNoteOn())  notes.add (msg.getNoteNumber()); //zapisuje wysokosc dzwieku ktora nuta. Notes tablica ktora trzyma nuty i dodaje add
+                if (msg.isNoteOn())  notes.add (msg.getNoteNumber()); //zapisuje wysokosc dzwieku ktora nuta. Notes tablica ktora trzyma nuty i dodaje add
                 else if (msg.isNoteOff()) notes.removeValue (msg.getNoteNumber()); //odkliknieta no to usuwam
             }
 
@@ -176,8 +176,6 @@ void ArpAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
     
     if ((time + numSamples) >= noteDuration)
             {
-                
-                
                 auto offset = fmax (0, fmin ((int) (noteDuration - time), numSamples - 1));
 
                 if (lastNoteValue > 0)
@@ -210,11 +208,26 @@ void ArpAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
                         
                     }
                     lastNoteValue = notes[currentNote];
+                    newNotes = lastNoteValue+(currentOctave-1)*semitonesInOctave;
                     midiMessages.addEvent (juce::MidiMessage::noteOn (1, lastNoteValue, (juce::uint8) 127), offset);
+                }
+                
+                counterNotes += 1;
+                
+                if(counterNotes == notes.size()){
+                    
+                    currentOctave += 1;
+                    counterNotes = 0;
+                    
+//                    if(currentOctave == octaves ){
+//                        currentOctave = 1;
+//                    }
+                    
                 }
             }
 
             time = (time + numSamples) % noteDuration;
+
         
 }
 

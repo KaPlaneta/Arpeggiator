@@ -42,18 +42,32 @@ ArpAudioProcessorEditor::ArpAudioProcessorEditor (ArpAudioProcessor& p)
     setSize (400, 300);
     
     speed.setSliderStyle (juce::Slider::LinearBar);
-    speed.setRange(0, 1, 0.01); // Zakres od 1 do 100 z krokiem 1
+    speed.setRange(0, 1, 0.01);
     speed.setPopupDisplayEnabled (true, false, this);
-//    windowSize.setTextValueSuffix ("Window size");
     speed.setValue(0.5);
 
     addAndMakeVisible (&speed);
+    
+    
+    
+    octaves.addListener (this);
+
+    // Make sure that before the constructor has finished, you've set the
+    // editor's size to whatever you need it to be.
+    
+    octaves.setSliderStyle (juce::Slider::LinearBar);
+    octaves.setRange(1, 4, 1);
+    octaves.setPopupDisplayEnabled (true, false, this);
+    octaves.setValue(0.5);
+    addAndMakeVisible (&octaves);
 
 }
 
 void ArpAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
 {
 audioProcessor.speed = speed.getValue();
+audioProcessor.octaves = octaves.getValue();
+
 }
 
 
@@ -76,6 +90,9 @@ void ArpAudioProcessorEditor::resized()
     
     speed.setBounds (40, 110, getWidth()-60, 20);
 
+    octaves.setBounds (40, 150, getWidth()-60, 20);
+
+    
     int it = 40;
     for (auto button : buttons) {
         button.button->setBounds(10, it, 150, 25);

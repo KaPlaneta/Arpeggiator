@@ -58,6 +58,7 @@ public:
     std::atomic <float>* algorithmParam = nullptr;
 
     float speed;
+    int octaves;
 
 
 
@@ -67,6 +68,12 @@ private:
        int currentNote, lastNoteValue;
        int time;
        float rate;
+       int currentOctave = 1;
+       int semitonesInOctave = 12;
+       int counterNotes = 0;
+       int newNotes;
+       
+    
        juce::SortedSet<int> notes;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ArpAudioProcessor)

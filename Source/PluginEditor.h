@@ -60,6 +60,8 @@ private:
     ArpAudioProcessor& audioProcessor;
     
     juce::Slider speed;
+    juce::Slider octaves;
+
     
     ToggleButtonInfo<enum SythesiserAlgorithm> buttons[3] = {
         { "Up to down", UpToDown, &upToDown},
